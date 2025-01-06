@@ -2,7 +2,14 @@ FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y git
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    git \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev
 
 RUN git clone https://github.com/kestraltorah/T2I-Adapter.git .
 
