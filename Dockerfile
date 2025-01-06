@@ -27,33 +27,24 @@ RUN apt-get update && apt-get install -y \
     libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 
-# 分批安装Python依赖以便于调试
-# 首先安装基础依赖
+# 安装Python依赖
 RUN pip install --no-cache-dir \
-    "transformers>=4.35.0" \
-    "accelerate>=0.24.0" \
-    "huggingface_hub>=0.19.0"
-
-# 安装diffusers和controlnet相关依赖
-RUN pip install --no-cache-dir \
-    "diffusers>=0.21.0" \
-    "controlnet_aux>=0.0.7"
-
-# 安装runpod和其他工具
-RUN pip install --no-cache-dir \
-    "runpod>=1.7.0" \
-    "omegaconf>=2.3.0" \
-    "pytorch_lightning>=2.0.0"
-
-# 最后安装可能有更多依赖的包
-RUN pip install --no-cache-dir \
-    "gradio>=4.7.0" \
-    "mediapipe>=0.10.0"
+    diffusers==0.21.4 \
+    transformers==4.35.2 \
+    accelerate==0.24.1 \
+    controlnet_aux==0.0.7 \
+    huggingface_hub==0.19.4 \
+    runpod==1.7.7 \
+    omegaconf==2.3.0 \
+    pytorch_lightning==2.1.2 \
+    gradio==4.7.1 \
+    mediapipe==0.10.8
 
 # 创建模型目录
 RUN mkdir -p /app/models
 
 # 预下载模型
+# 使用python脚本确保下载完整性
 RUN python -c 'import torch; \
     from diffusers import StableDiffusionXLAdapterPipeline, T2IAdapter; \
     from controlnet_aux.midas import MidasDetector; \
