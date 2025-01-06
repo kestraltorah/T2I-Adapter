@@ -2,6 +2,8 @@ FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
 WORKDIR /app
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # 安装系统依赖
 RUN apt-get update && apt-get install -y \
     git \
