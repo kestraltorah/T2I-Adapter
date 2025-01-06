@@ -12,7 +12,12 @@ RUN pip install --no-cache-dir \
     accelerate==0.24.1 \
     controlnet_aux==0.0.7 \
     huggingface_hub==0.19.4 \
-    runpod
+    runpod \
+    omegaconf \
+    datasets \
+    pytorch_lightning \
+    gradio \
+    mediapipe
 
 COPY handler.py /app/handler.py
 
