@@ -6,7 +6,7 @@ from io import BytesIO
 
 # 配置
 RUNPOD_API_KEY = "rpa_DV3RBXXWXMDRNCPNYRIZRFVXETYAS8XKQY9WZXTRttxrnu"
-ENDPOINT_ID = "890dnquzcauwm5"
+ENDPOINT_ID = "z3s1c50qmac4r0"
 BASE_URL = f"https://api.runpod.ai/v2/{ENDPOINT_ID}"
 
 headers = {

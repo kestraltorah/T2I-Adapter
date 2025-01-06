@@ -11,7 +11,8 @@ RUN pip install --no-cache-dir \
     transformers==4.35.2 \
     accelerate==0.24.1 \
     controlnet_aux==0.0.7 \
-    huggingface_hub==0.19.4
+    huggingface_hub==0.19.4 \
+    runpod
 
 COPY handler.py /app/handler.py
 
