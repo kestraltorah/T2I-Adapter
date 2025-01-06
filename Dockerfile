@@ -9,7 +9,12 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
-    libxrender-dev
+    libxrender-dev \
+    libglu1-mesa \
+    libgl1 \
+    libglvnd0 \
+    libgl1-mesa-dri \
+    libglx0
 
 RUN git clone https://github.com/kestraltorah/T2I-Adapter.git .
 
