@@ -1,57 +1,77 @@
 import runpod
 import torch
-from diffusers import StableDiffusionXLAdapterPipeline, T2IAdapter, EulerAncestralDiscreteScheduler, AutoencoderKL
-from controlnet_aux import LineartDetector
+from diffusers import StableDiffusionXLAdapterPipeline, T2IAdapter
+from controlnet_aux.midas import MidasDetector
+import base64
+from io import BytesIO
+from PIL import Image
 
-def init_model():
+def init_models():
+    # 初始化模型
     adapter = T2IAdapter.from_pretrained(
-        "TencentARC/t2i-adapter-lineart-sdxl-1.0",
-        torch_dtype=torch.float16,
-        varient="fp16"
+        "TencentARC/t2i-adapter-depth-midas-sdxl-1.0",
+        torch_dtype=torch.float16
     ).to("cuda")
-    
-    model_id = "stabilityai/stable-diffusion-xl-base-1.0"
-    euler_a = EulerAncestralDiscreteScheduler.from_pretrained(model_id, subfolder="scheduler")
-    vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
     
     pipe = StableDiffusionXLAdapterPipeline.from_pretrained(
-        model_id,
-        vae=vae,
+        "stabilityai/stable-diffusion-xl-base-1.0",
         adapter=adapter,
-        scheduler=euler_a,
-        torch_dtype=torch.float16,
-        variant="fp16"
+        torch_dtype=torch.float16
     ).to("cuda")
     
-    pipe.enable_xformers_memory_efficient_attention()
-    return pipe, LineartDetector.from_pretrained("lllyasviel/Annotators").to("cuda")
+    midas = MidasDetector.from_pretrained(
+        "valhalla/t2iadapter-aux-models",
+        filename="dpt_large_384.pt"
+    ).to("cuda")
+    
+    return pipe, midas
 
-# 初始化模型
-pipe, line_detector = init_model()
+# 全局变量
+PIPE = None
+MIDAS = None
 
 def handler(event):
+    global PIPE, MIDAS
+    
+    # 首次运行时初始化模型
+    if PIPE is None or MIDAS is None:
+        PIPE, MIDAS = init_models()
+    
     try:
         # 获取输入
-        prompt = event["input"].get("prompt", "")
-        image = event["input"].get("image")
+        job_input = event.get("input", {})
         
-        if not prompt or not image:
-            return {"error": "Missing prompt or image"}
-            
-        # 处理图像
-        image = line_detector(image, detect_resolution=384, image_resolution=1024)
+        # 验证输入
+        if not job_input:
+            return {"error": "No input provided"}
+        
+        # 获取参数
+        image_b64 = job_input.get("image")
+        prompt = job_input.get("prompt", "")
+        
+        if not image_b64 or not prompt:
+            return {"error": "Missing required input: image or prompt"}
+        
+        # 解码图像
+        image = Image.open(BytesIO(base64.b64decode(image_b64)))
+        
+        # 生成深度图
+        depth_image = MIDAS(image)
         
         # 生成图像
-        output = pipe(
+        output = PIPE(
             prompt=prompt,
-            image=image,
+            image=depth_image,
             num_inference_steps=30,
-            adapter_conditioning_scale=0.8,
             guidance_scale=7.5
-        )
+        ).images[0]
         
-        # 返回结果
-        return {"generated_image": output.images[0]}
+        # 编码输出图像
+        buffered = BytesIO()
+        output.save(buffered, format="PNG")
+        output_b64 = base64.b64encode(buffered.getvalue()).decode()
+        
+        return {"output": output_b64}
         
     except Exception as e:
         return {"error": str(e)}
